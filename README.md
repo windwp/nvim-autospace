@@ -9,9 +9,13 @@ local a=a+b
 local a = a + b
 ```
 ### Usage
+
 `:lua require('nvim-autospace').format(0)` : format current line
+
 `:lua require('nvim-autospace').format(-1)` : format line above
-`:lua require('nvim-autospace').format()`+format line and dont' validate global filetype 
+
+`:lua require('nvim-autospace').format()`+format line and dont' validate global filetype
+
 
 by default it doesn't mapping to any key on vim.
 You need to do it

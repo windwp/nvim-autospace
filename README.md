@@ -14,7 +14,7 @@ local a = a + b
 
 `:lua require('nvim-autospace').format(-1)` : format line above
 
-`:lua require('nvim-autospace').format()`+format line and dont' validate global filetype
+`:lua require('nvim-autospace').format()` : format current line but it doesn't validate global filetype
 
 
 by default it doesn't mapping to any key on vim.

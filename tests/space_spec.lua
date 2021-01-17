@@ -53,17 +53,67 @@ local data = {
     after  = [[ a[2] + a[4] ]]
   },
   {
-    name = "char $ custom setup] " ,
+    name = "char $ custom setup " ,
     filetype = "javascript",
     before = [[ a[2]$a[4] ]],
     after  = [[ a[2] $ a[4] ]]
   },
+  {
+    name = "char >" ,
+    filetype = "javascript",
+    before = [[local a>=b]],
+    after  = [[local a >= b]]
+  },
+  {
+    name = "char +  quote " ,
+    filetype = "javascript",
+    before = [['name' : '+replace']],
+    after  = [['name' : '+replace']]
+  },
+  {
+    name = "char - with number " ,
+    filetype = "javascript",
+    before = [[charIndex -(next_char[2]-prev_char[2]) -2;(-2+2-2)]],
+    after  = [[charIndex - (next_char[2] - prev_char[2]) -2;(-2 + 2 -2)]]
+  },
+  {
+    name = "remove empty char on word" ,
+    filetype = "javascript",
+    before = [[ aaa   aaaa]],
+    after  = [[ aaa aaaa]]
+  },
+  {
+    name = "remove empty char on word not inside quote",
+    filetype = "javascript",
+    before = [[ aaa   aaaa "aa    \"aaa"   aaa   bbbb]],
+    after  = [[ aaa aaaa "aa    \"aaa" aaa bbbb]]
+  },
+  {
+    name = "remove empty char with single quote" ,
+    filetype = "javascript",
+    before = [[(dsada  ,      sadas          ,)]],
+    after  = [[(dsada, sadas,)]]
+  },
+  {
+    name = "remove empty char with single quote with quote" ,
+    filetype = "javascript",
+    before = [[(dsada  ,      sadas          ,"aaa   ,  a")]],
+    after  = [[(dsada, sadas, "aaa   ,  a")]]
+  },
 }
 
+local run_data = {} 
+for _, value in pairs(data) do
+  if value.only == true then
+    table.insert(run_data, value)
+    break
+  end
+end
+if #run_data == 0 then run_data = data end
 
 
 describe('autospace ', function()
-  for _, value in pairs(data) do
+  for _, value in pairs(run_data) do
     it("test "..value.name, function()
       local before = string.gsub(value.before , '%|' , "")
       local after = string.gsub(value.after , '%|' , "")

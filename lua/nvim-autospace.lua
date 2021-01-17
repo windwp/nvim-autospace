@@ -2,40 +2,48 @@ local M = {}
 
 local char_rule ={
     ["+"] = {
-      before = {prev = "[a-zA-Z0-9'\"%]%)]", next="."},
-      after  = {prev = ".", next = "[a-zA-Z0-9'\"%(]"}
+      before = {prev = "[%w'\"%]%)]", next="."},
+      after  = {prev = ".", next = "[%w'\"%(]"}
     },
     ["-"] = {
-      before = {prev = "[a-zA-Z0-9'\"%)]", next="[0-9]"},
-      after  = {prev = "[\\(]", next = "[a-zA-Z0-9'\"%(]"}
+      before = {prev = "[%w'\"%]%)]", next="[%w]"},
+      after  = {prev = "[%w%(%] ]", next = "[a-zA-Z'\"%(]"}
     },
     ["="] = {
-      before = {prev = "[a-zA-Z0-9'\"%]%)]", next = "[ =0-9%w%{\"\']"},
-      after  = {prev = ".", next = "[a-zA-Z0-9'\"%(%{]"}
+      before = {prev = "[%w'\"%]%)]", next = "[ =%w%{\"\']"},
+      after  = {prev = ".", next = "[%w'\"%(%{]"}
+    },
+    [">"]={
+      before = {prev = "[%w'\"%]%)]", next = "[ =%w%{\"\']"},
+      after  = {prev = ".", next = "[%w'\"%(%{]"}
+    },
+    ["<"]={
+      before = {prev = "[%w'\"%]%)]", next = "[ =%w%{\"\']"},
+      after  = {prev = ".", next = "[%w'\"%(%{]"}
     },
     ["&"] = {
-      before = {prev = "[a-zA-Z0-9'\"%]%)]", next="."},
-      after  = {prev = ".", next = "[a-zA-Z0-9'\"%(]"}
+      before = {prev = "[%w'\"%]%)]", next="."},
+      after  = {prev = ".", next = "[%w'\"%(]"}
     },
     [")"] = {
-      after  = {prev = ".", next = "[a-zA-Z0-9]"}
+      after  = {prev = ".", next = "[%w]"}
     },
     [":"] = {
-      after  = {prev = ".", next = "[a-zA-Z0-9'\"%(]", disable_ft = {'lua', 'vim'}}
+      after  = {prev = ".", next = "[%w'\"%(]", disable_ft = {'lua', 'vim'}}
     },
     ["!"] = {
-      before = {prev = "[a-zA-Z0-9'\"%)]", next = "="},
+      before = {prev = "[%w'\"%)]", next = "="},
     },
     ["~"] = {
-      before = {prev = "[a-zA-Z0-9'\"%)]", next = "=", ft = {'lua'}},
+      before = {prev = "[%w'\"%)]", next = "=", ft = {'lua'}},
     },
     ["."]={
-      after  = {prev = "%.", next = "[a-zA-Z0-9'\"%(]" , ft = { "lua" }},
-      before = {prev = "[a-zA-Z0-9'\"%]%)]", next = "%." , ft = { "lua" }}
+      after  = {prev = "%.", next = "[%w'\"%(]" , ft = { "lua" }},
+      before = {prev = "[%w'\"%]%)]", next = "%." , ft = { "lua" }}
     },
     [","]={
-      after = {prev = ".", next = "[a-zA-Z0-9'\"%(]" ,},
-    }
+      after  = {prev = ".", next = "[%w'\"%(]" ,},
+    },
 }
 
 local enable_filetypes = {'lua', 'javascript', 'typescript', 'typescriptreact', 'go', 'java', 'csharp', 'vim', 'python'}
@@ -55,6 +63,15 @@ local function isInTable(tbl, val)
   end
   return false
 end
+local function getNotEmptychar(text, pos, direction)
+  local charIndex = pos
+  while charIndex < string.len(text)  and charIndex >= 0 do
+    charIndex = charIndex + direction
+    local char = text:sub(charIndex, charIndex)
+    if char ~= " "  then return {char, charIndex} end
+  end
+  return nil
+end
 
 M.setup = function(opts)
   opts.enable_filetypes = opts.enable_filetypes or enable_filetypes
@@ -65,9 +82,32 @@ M.setup = function(opts)
   end
 end
 
+
+local function is_in_quote(line, pos)
+  local cIndex = 0
+  local last_quote = ''
+  local result = false
+  while cIndex < string.len(line) and cIndex < pos  do
+    cIndex = cIndex + 1
+    local char = line:sub(cIndex, cIndex)
+    if
+      result == true and
+      char == last_quote and
+      line:sub(cIndex -1, cIndex -1) ~= "\\"
+    then
+       result = false
+     elseif result == false and (char == "'" or char == '"') then
+        last_quote = char
+        result = true
+    end
+  end
+  return result
+end
+
 M.format = function(lineSkip)
-  local pos = vim.fn.getpos('.')
-  local line = vim.fn.getline('.')
+  local pos       = vim.fn.getpos('.')
+  local line      = vim.fn.getline('.')
+  local charIndex = 0
   -- special case check cursor is end of line
   if lineSkip == 999 then
     if pos[3] <= (string.len(line) - 1) then return else lineSkip = 0 end
@@ -79,35 +119,16 @@ M.format = function(lineSkip)
   line = vim.fn.getline(lnr)
 
   if lineSkip ~= nil and isNotInTable(enable_filetypes, vim.bo.filetype) == true then return end
-  local quote_list = { '"', "'", '`' }
-  local isInQuote = false
-  local lastQuote = ""
-  local charIndex = 0
 
   while charIndex < string.len(line) do
     charIndex = charIndex + 1
-    for _, quote in pairs(quote_list) do
-      if isInQuote == true
-          and quote == line:sub(charIndex, charIndex)
-          and quote == lastQuote
-          and line:sub(charIndex -1,charIndex-1)~= "\\"
-        then
-        isInQuote = false
-        break;
-      end
-      if isInQuote == false
-        and quote == line:sub(charIndex , charIndex)
-        then
-        lastQuote = quote
-        isInQuote = true
-      end
-    end
+    local char      = line:sub(charIndex, charIndex)
+    local pre_char  = line:sub(charIndex - 1, charIndex - 1)
+    local next_char = line:sub(charIndex + 1, charIndex + 1)
+    local isInQuote = is_in_quote(line, charIndex )
     if isInQuote == false then
-      local char = line:sub(charIndex, charIndex)
       local rule = char_rule[char]
       if rule ~= nil then
-        local pre_char = line:sub(charIndex - 1, charIndex - 1)
-        local next_char = line:sub(charIndex + 1, charIndex + 1)
         if
           rule.before ~= nil and
           isNotInTable(rule.before.disable_ft, vim.bo.filetype) == true and
@@ -128,9 +149,36 @@ M.format = function(lineSkip)
            line = line:sub(0, charIndex -1).. char .. " " .. line:sub(charIndex + 1, string.len(line))
         end
       end
+
+      if char == " " then
+        local prev_obj = getNotEmptychar(line, charIndex,-1)
+        local next_obj = getNotEmptychar(line, charIndex, 1)
+        if prev_obj ~= nil and next_obj ~= nil then
+          if
+            next_obj[2] - prev_obj[2] > 2 and
+            string.match(prev_obj[1], "[%w\"%)%],]") and
+            string.match(next_obj[1], "[%w\"%)%]%.]")
+          then
+            line = line:sub(0, prev_obj[2]) .. ' ' .. line:sub(next_obj[2], string.len(line))
+            charIndex = charIndex -(next_obj[2]-prev_obj[2]) -2
+          end
+          -- remove empty (abc   ,aa) => (abc, aa)
+          if
+            next_obj[2] - prev_obj[2] > 1 and
+            next_obj[1] == "," and
+            string.match(prev_obj[1], "[%w\"]")
+          then
+            line = line:sub(0, prev_obj[2]) .. line:sub(next_obj[2], string.len(line))
+            charIndex = charIndex - (next_obj[2] - prev_obj[2]) -2
+          end
+
+        end
+      end
     end
   end
+
   vim.fn.setline(lnr, line)
 end
 
+M.is_in_quote = is_in_quote
 return M

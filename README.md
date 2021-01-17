@@ -1,7 +1,8 @@
 ## nvim-autospace
 - add space on some special character
-- No remove any whitespace
 - No add space on charater inside quote
+- remove whitespace
+
 ### Sample
 ``` lua
 local a=a+b

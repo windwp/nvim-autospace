@@ -6,20 +6,20 @@ local char_rule ={
       after  = {prev = ".", next = "[%w'\"%(]"}
     },
     ["-"] = {
-      before = {prev = "[%w'\"%]%)]", next="[%w]"},
-      after  = {prev = "[%w%(%] ]", next = "[a-zA-Z'\"%(]"}
+      before = {prev = "[%w'\"%]%)]", next="[%w]", disable_ft = {"vim"}},
+      after  = {prev = "[%w%(%] ]", next = "[a-zA-Z'\"%(]", disable_ft = {"vim"}}
     },
     ["="] = {
       before = {prev = "[%w'\"%]%)]", next = "[ =%w%{\"\']"},
       after  = {prev = ".", next = "[%w'\"%(%{]"}
     },
     [">"]={
-      before = {prev = "[%w'\"%]%)]", next = "[ =%w%{\"\']"},
-      after  = {prev = ".", next = "[%w'\"%(%{]"}
+      before = {prev = "[%w'\"%]%)]", next = "[ =%w%{\"\']", disable_ft = {"vim", "javascript", "typescriptreact"}},
+      after  = {prev = ".", next = "[%w'\"%(%{]", disable_ft = {"vim", "javascript", "typescriptreact"}}
     },
     ["<"]={
-      before = {prev = "[%w'\"%]%)]", next = "[ =%w%{\"\']"},
-      after  = {prev = ".", next = "[%w'\"%(%{]"}
+      before = {prev = "[%w'\"%]%)]", next = "[ =%w%{\"\']", disable_ft = {"vim", "javascript", "typescriptreact"}},
+      after  = {prev = ".", next = "[%w'\"%(%{]", disable_ft = {"vim", "javascript", "typescriptreact"}}
     },
     ["&"] = {
       before = {prev = "[%w'\"%]%)]", next="."},
@@ -32,7 +32,7 @@ local char_rule ={
       after  = {prev = ".", next = "[%w'\"%(]", disable_ft = {'lua', 'vim'}}
     },
     ["!"] = {
-      before = {prev = "[%w'\"%)]", next = "="},
+      before = {prev = "[%w'\"%)]", next = "=", ft = {"javascript", "typescript", "vim"}},
     },
     ["~"] = {
       before = {prev = "[%w'\"%)]", next = "=", ft = {'lua'}},
@@ -46,12 +46,14 @@ local char_rule ={
     },
 }
 
-local enable_filetypes = {'lua', 'javascript', 'typescript', 'typescriptreact', 'go', 'java', 'csharp', 'vim', 'python'}
+local enable_filetypes = {'lua', 'javascript', 'typescript', 'typescriptreact', 'go', 'java', 'csharp', 'python'}
 
 local function isNotInTable(tbl, val)
   if tbl == nil then return true end
   for _, value in pairs(tbl) do
-    if value == val then return false end
+    if value == val then
+    return false
+  end
   end
   return true
 end
@@ -178,6 +180,10 @@ M.format = function(lineSkip)
   end
 
   vim.fn.setline(lnr, line)
+  if lineSkip== 0 or lineSkip == nil  then
+    -- indent
+    vim.cmd[[normal!==]]
+  end
 end
 
 M.is_in_quote = is_in_quote

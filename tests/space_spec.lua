@@ -77,6 +77,12 @@ local data = {
     after  = [[charIndex - (next_char[2] - prev_char[2]) -2;(-2 + 2 -2)]]
   },
   {
+    name = "char > empty char with single quote with quote",
+    filetype = "vim",
+    before = [[noremap <silent> <c-t>j V:m '>+1<CR>gv=gv]],
+    after  = [[noremap <silent> <c-t>j V:m '>+1<CR>gv=gv]]
+  },
+  {
     name = "remove empty char on word" ,
     filetype = "javascript",
     before = [[ aaa   aaaa]],
@@ -100,9 +106,10 @@ local data = {
     before = [[(dsada  ,      sadas          ,"aaa   ,  a")]],
     after  = [[(dsada, sadas, "aaa   ,  a")]]
   },
+
 }
 
-local run_data = {} 
+local run_data = {}
 for _, value in pairs(data) do
   if value.only == true then
     table.insert(run_data, value)
@@ -124,19 +131,22 @@ describe('autospace ', function()
         vim.bo.filetype = "text"
       end
       vim.fn.setline(line , before)
-      vim.fn.setpos('.' ,{0 , line , 0 , 0})
+      vim.fn.setpos('.' ,{0, line, 0, 0})
       auto_space.format(0)
       local result = vim.fn.getline(line)
       eq(after, result , "\n\n text error: " .. value.name .. "\n")
     end)
   end
-  it("test skip filetype", function()
+
+  if #run_data > 1 then
+    it("test skip filetype", function()
       vim.bo.filetype = "text"
       vim.fn.setline(1 , "a=a+b" )
       auto_space.format()
       local result = vim.fn.getline(1)
       eq("a = a + b", result , "file text error")
-  end)
+    end)
+  end
 end)
 
 
